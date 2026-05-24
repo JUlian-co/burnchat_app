@@ -3,26 +3,40 @@ import { supabase } from "@/lib/supabase";
 import { useEffect, useState } from "react";
 
 export default function AuthProvider({ children }) {
-  const [session, setSession] = useState();
-  const [profile, setProfile] = useState();
+  const [session, setSession] = useState(null);
+  const [profile, setProfile] = useState({
+    id: null,
+    device_token: null,
+    username: null,
+    displayName: null,
+    createdAt: null,
+    // profile_pic: null, TODO: muss noch
+  });
   const [isLoading, setIsLoading] = useState(true);
+  const [retry, setRetry] = useState(false);
 
-  // Fetch the session once, and subscribe to auth state changes
+  useEffect(() => {
+    // Session beim Start checken
+    fetchSession();
+
+    // Auf Änderungen hören (Login/Logout)
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
   useEffect(() => {
     const fetchSession = async () => {
-      setIsLoading(true);
-
+      // Hier liest Supabase den AsyncStorage aus:
       const {
         data: { session },
-        error,
       } = await supabase.auth.getSession();
-
-      if (error) {
-        console.error("Error fetching session:", error);
-      }
-
       setSession(session);
-      setIsLoading(false);
+      setIsLoading(false); // Erst wenn das fertig ist, darf die App rendern
     };
 
     fetchSession();
@@ -30,47 +44,56 @@ export default function AuthProvider({ children }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      console.log("Auth state changed:", { event: _event, session });
       setSession(session);
     });
 
-    // Cleanup subscription on unmount
-    return () => {
-      subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, []);
 
-  // Fetch the profile when the session changes
+  const fetchSession = async () => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    console.log("Fetched session:", session);
+    setSession(session); // Wenn kein User da ist, wird das null
+    setIsLoading(false); // Erst HIER setIsLoading auf false
+  };
+
   useEffect(() => {
     const fetchProfile = async () => {
-      setIsLoading(true);
+      if (session?.user) {
 
-      if (session) {
-        const { data } = await supabase
-          .from("profiles")
+        console.log("Session user ID:", session.user.id);
+
+        /* const { data, error } = await supabase
+          .from("users")
           .select("*")
           .eq("id", session.user.id)
           .single();
 
-        setProfile(data);
+        if (data) {
+          setProfile(data);
+          console.log("       Fetched profile:", data);
+        } else if (error) {
+          // Falls noch kein Profil da ist (z.B. Timing Problem beim Erstellen)
+          console.error("Error fetching profile:", error.message);
+
+          // TODO: Diese retry logik ist gerade noch ein scheiß aber sie tuts fürs erste
+          setRetry(!retry);
+          setProfile(null);
+        } */
       } else {
         setProfile(null);
       }
-
-      setIsLoading(false);
     };
 
     fetchProfile();
-  }, [session]);
+  }, [session, retry]);
 
   return (
     <AuthContext.Provider
-      value={{
-        session,
-        isLoading,
-        profile,
-        isLoggedIn: session != undefined,
-      }}
+      value={{ session, isLoading, profile, isLoggedIn: !!session }}
     >
       {children}
     </AuthContext.Provider>
