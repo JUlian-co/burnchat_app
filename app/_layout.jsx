@@ -15,7 +15,6 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 import AuthProvider from "@/providers/auth-provider";
 import { useEffect } from "react";
 
-// Separate RootNavigator so we can access the AuthContext
 function RootNavigator() {
   // const { isLoggedIn } = useAuthContext(); ist da
   const { session, isLoading } = useAuthContext();
@@ -36,15 +35,9 @@ function RootNavigator() {
   }, [session, isLoading, segments]);
 
   return (
-    <Stack>
-      {/* <Stack.Protected guard={isLoggedIn}> */}
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      </Stack>
-      <Stack>
-        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-      </Stack>
-      <Stack.Screen name="+not-found" />
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="(auth)" />
+      <Stack.Screen name="(tabs)" />
     </Stack>
   );
 }
