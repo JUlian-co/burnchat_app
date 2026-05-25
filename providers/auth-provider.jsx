@@ -6,11 +6,8 @@ export default function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState({
     id: null,
-    device_token: null,
     username: null,
-    displayName: null,
-    createdAt: null,
-    // profile_pic: null, TODO: muss noch
+    displayname: null,
   });
   const [isLoading, setIsLoading] = useState(true);
   const [retry, setRetry] = useState(false);
@@ -62,11 +59,13 @@ export default function AuthProvider({ children }) {
 
   useEffect(() => {
     const fetchProfile = async () => {
+      console.warn("fetch prfile called");
       if (session?.user) {
+        console.warn("in if session user ");
 
         console.log("Session user ID:", session.user.id);
 
-        /* const { data, error } = await supabase
+        const { data, error } = await supabase
           .from("users")
           .select("*")
           .eq("id", session.user.id)
@@ -82,7 +81,7 @@ export default function AuthProvider({ children }) {
           // TODO: Diese retry logik ist gerade noch ein scheiß aber sie tuts fürs erste
           setRetry(!retry);
           setProfile(null);
-        } */
+        }
       } else {
         setProfile(null);
       }
