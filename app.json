@@ -1,16 +1,16 @@
 {
   "expo": {
-    "name": "supachat",
-    "slug": "supachat",
+    "name": "burnchat",
+    "slug": "burnchat",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "supachat",
+    "scheme": "burnchat",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.supachat"
+      "bundleIdentifier": "com.anonymous.burnchat"
     },
     "android": {
       "adaptiveIcon": {
@@ -21,7 +21,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.supachat"
+      "package": "com.anonymous.burnchat"
     },
     "web": {
       "output": "static",
