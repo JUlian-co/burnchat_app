@@ -42,6 +42,21 @@ export default function CameraScreen() {
     // uploadImage(photo);
   };
 
+  const sendPicture = async () => {
+    const photoUrl = await uploadImage(photo);
+
+    console.warn("photourl in sendpic: ", photoUrl);
+    const { error } = await supabase
+      .from("posts")
+      .insert({ user_id: profile.id, image_url: photoUrl });
+
+    if (error) {
+      console.error("error sending picture: ", error);
+    }
+
+    setPhoto({ uri: null });
+  };
+
   const uploadImage = async (asset) => {
     const formData = new FormData();
     formData.append("file", {
@@ -59,12 +74,16 @@ export default function CameraScreen() {
 
     if (error) {
       console.error("Upload error:", error.message);
+
+      return null;
     } else {
       console.log("Erfolg!", data);
 
       const publicUrl = supabase.storage.from("uploads").getPublicUrl(data.path)
         .data.publicUrl;
       console.log(publicUrl);
+
+      return publicUrl;
     }
   };
 
@@ -108,7 +127,17 @@ export default function CameraScreen() {
         onLoad={() => console.log("Bild erfolgreich geladen!")}
         onError={(err) => console.log("Fehler beim Bildladen:", err)}
       />
-      <Button onPress={() => setPhoto(null)} title="Take another picture" />
+      <Button
+        onPress={() => setPhoto({ uri: null })}
+        title="Take another picture"
+      />
+
+      <TouchableOpacity
+        className="bg-emerald-400/80 px-6 py-4 rounded-xl active:bg-white/30 mt-4"
+        onPress={sendPicture}
+      >
+        <Text>Senden</Text>
+      </TouchableOpacity>
     </View>
   );
 
