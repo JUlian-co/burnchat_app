@@ -2,6 +2,8 @@ import { AuthContext } from "@/hooks/use-auth-context";
 import { supabase } from "@/lib/supabase";
 import { useEffect, useState } from "react";
 
+// TODO: Auch alle freunde fetchen
+
 export default function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState({
@@ -9,6 +11,7 @@ export default function AuthProvider({ children }) {
     username: null,
     displayname: null,
   });
+  const [friends, setFriends] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [retry, setRetry] = useState(false);
 
@@ -87,12 +90,60 @@ export default function AuthProvider({ children }) {
       }
     };
 
+    const fetchFriends = async () => {
+      if (session?.user) {
+        const { data, error } = await supabase
+          .from("friendships")
+          .select("*")
+          .or(`user_id.eq.${session.user.id},friend_id.eq.${session.user.id}`)
+          .eq("status", "accepted");
+
+        if (data) {
+          console.log("Fetched friends: ", data);
+
+          const { data: friendProfiles, error: friendError } = await supabase
+            .from("users")
+            .select("*")
+            .in("id", [
+              ...data.map((f) => f.user_id),
+              ...data.map((f) => f.friend_id),
+            ]);
+
+          if (friendProfiles) {
+            console.log("Fetched friend profiles: ", friendProfiles);
+
+            const filteredData = friendProfiles.filter(
+              (f) => f.id !== session.user.id,
+            );
+
+            console.log("Filtered friend profiles: ", filteredData);
+
+            setFriends(filteredData);
+          } else if (friendError) {
+            console.error(
+              "Error fetching friend profiles: ",
+              friendError.message,
+            );
+          }
+        } else if (error) {
+          console.error("Error fetching friends: ", error.message);
+        }
+      }
+    };
+
     fetchProfile();
+
+    // fetchFriends();
   }, [session, retry]);
 
   return (
     <AuthContext.Provider
-      value={{ session, isLoading, profile, isLoggedIn: !!session }}
+      value={{
+        session,
+        isLoading,
+        profile,
+        /* friends, */ isLoggedIn: !!session,
+      }}
     >
       {children}
     </AuthContext.Provider>
