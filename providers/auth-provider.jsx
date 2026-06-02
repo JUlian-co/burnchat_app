@@ -133,7 +133,8 @@ export default function AuthProvider({ children }) {
 
     fetchProfile();
 
-    // fetchFriends();
+    /* TODO: wir müssen für die friends noch ein supabase channel erstellen */
+    fetchFriends(); // war auskommentiert aber hat trotzdem geklappt
   }, [session, retry]);
 
   return (
