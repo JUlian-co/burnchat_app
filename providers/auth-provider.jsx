@@ -142,7 +142,7 @@ export default function AuthProvider({ children }) {
         session,
         isLoading,
         profile,
-        /* friends, */ isLoggedIn: !!session,
+        friends, isLoggedIn: !!session,
       }}
     >
       {children}
