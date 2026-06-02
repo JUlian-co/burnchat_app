@@ -26,12 +26,16 @@ export default function HomeScreen() {
   const [showUsers, setShowUsers] = useState(false);
   const [pictures, setPictures] = useState([]);
 
-  // 1. Alle Posts vom Server holen
+  // 1. Alle Posts von freunden von Server holen
   const fetchRawPosts = async () => {
+    if (friends.length === 0) {
+      console.log("du hast keine freunde");
+      return;
+    }
+    
     const { data, error } = await supabase
       .from("posts")
-      .select("*")
-      .order("created_at", { ascending: false });
+      .select("*").eq("user_id", friends.map((f) => f.id)).order("created_at", { ascending: false });
 
     if (error) throw error;
     return data || [];
@@ -94,6 +98,9 @@ export default function HomeScreen() {
 
     // INITIALER LADEVORGANG
     const loadInitialPictures = async () => {
+
+      if (friends?.length === 0) return;
+
       try {
         const rawPosts = await fetchRawPosts();
         const validNotViewedPosts = await processAndFilterPosts(
@@ -114,10 +121,17 @@ export default function HomeScreen() {
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "posts" },
+        // TODO: Hier noch RLS oder so machen weil man auf JEDES bild hört, egal ob von freund oder nicht
         async (payload) => {
           console.log("Neues Bild live empfangen!", payload.new);
 
-          // Das neue Bild durch unsere Logik jagen
+          const picFromFriend = friends.some((f) => f.id === payload.new.user_id);
+
+          if (!picFromFriend) {
+            console.log("picture not from friend")
+            return;
+          }
+
           const processedLivePost = await processAndFilterPosts(
             [payload.new],
             profile.id,
@@ -138,7 +152,7 @@ export default function HomeScreen() {
     return () => {
       supabase.removeChannel(postsChannel);
     };
-  }, [profile?.id]);
+  }, [profile?.id, friends]);
 
   const searchUsers = async (name) => {
     if (name.trim === "") {
@@ -256,6 +270,9 @@ export default function HomeScreen() {
       <View className="flex-1 justify-center items-center w-full my-4">
         <Pictures photos={pictures} setPhotos={setPictures} />
       </View>
+
+      <Text className="text-white font-bold">Nutzername: {profile?.username}</Text>
+      <Text className="text-white"> Anzeigename: {profile?.display_name}</Text>
 
       {/* 4. Footer: Der SignOut Button bleibt fest unten */}
       <View className="w-full items-center pb-4">
