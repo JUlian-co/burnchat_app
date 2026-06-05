@@ -107,8 +107,14 @@ export default function HomeScreen() {
           rawPosts,
           profile.id,
         );
-        setPictures(validNotViewedPosts);
-      } catch (error) {
+
+        const postsAfterFriendship = validNotViewedPosts.filter((p) =>
+          p.createdAt > friends.find((f) => f.id === p.user_id)?.created_at,
+        );
+
+        console.log("posts nach freundschaft: ", postsAfterFriendship)
+        setPictures(postsAfterFriendship);
+      } catch (error) { 
         console.error("Fehler beim initialen Laden:", error);
       }
     };
