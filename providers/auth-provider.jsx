@@ -2,8 +2,6 @@ import { AuthContext } from "@/hooks/use-auth-context";
 import { supabase } from "@/lib/supabase";
 import { useEffect, useState } from "react";
 
-// TODO: Auch alle freunde fetchen
-
 export default function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState({

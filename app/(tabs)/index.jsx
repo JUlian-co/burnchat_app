@@ -7,8 +7,6 @@ import {
   View,
 } from "react-native";
 
-// TODO: Aktuell kann ein freund auch die bilder vor der freundschaft anschauen, aber das sollten wir mit den timestamps uns maps regeln können
-
 import { HelloWave } from "@/components/hello-wave";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
 import SignOutButton from "@/components/social-auth-buttons/sign-out-button";
@@ -183,8 +181,6 @@ export default function HomeScreen() {
 
   const requestFriend = async (friendId) => {
     console.log("Requesting friendship with user ID:", friendId);
-
-    // TODO: das select statement einbauen um zu schauen ob die nicht schon befreundet sind, aber kann man auch im auth-provider lösen
 
     const exists = await friendshipExists(friendId);
 
