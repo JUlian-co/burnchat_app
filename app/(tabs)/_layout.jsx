@@ -5,7 +5,7 @@ import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { Camera, Images } from 'lucide-react-native';
+import { Camera, Images, Users } from 'lucide-react-native';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -22,6 +22,13 @@ export default function TabLayout() {
         options={{
           tabBarShowLabel: false,
           tabBarIcon: ({ color }) => <Images size={28} name="house.fill" color={color} />,
+        }}
+        />
+      <Tabs.Screen
+        name="friends"
+        options={{
+          tabBarShowLabel: false,
+          tabBarIcon: ({ color }) => <Users size={28} name="house.fill" color={color} />,
         }}
         />
       <Tabs.Screen
