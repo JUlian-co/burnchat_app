@@ -14,7 +14,7 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { useAuthContext } from "@/hooks/use-auth-context";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Plus, Search, X } from "lucide-react-native";
+import { Check, Plus, Search, X } from "lucide-react-native";
 import { supabase } from "@/lib/supabase";
 import { useEffect, useState } from "react";
 
@@ -30,10 +30,15 @@ export default function HomeScreen() {
       console.log("du hast keine freunde");
       return;
     }
-    
+
     const { data, error } = await supabase
       .from("posts")
-      .select("*").eq("user_id", friends.map((f) => f.id)).order("created_at", { ascending: false });
+      .select("*")
+      .eq(
+        "user_id",
+        friends.map((f) => f.id),
+      )
+      .order("created_at", { ascending: false });
 
     if (error) throw error;
     return data || [];
@@ -96,7 +101,6 @@ export default function HomeScreen() {
 
     // INITIALER LADEVORGANG
     const loadInitialPictures = async () => {
-
       if (friends?.length === 0) return;
 
       try {
@@ -106,13 +110,14 @@ export default function HomeScreen() {
           profile.id,
         );
 
-        const postsAfterFriendship = validNotViewedPosts.filter((p) =>
-          p.createdAt > friends.find((f) => f.id === p.user_id)?.created_at,
+        const postsAfterFriendship = validNotViewedPosts.filter(
+          (p) =>
+            p.createdAt > friends.find((f) => f.id === p.user_id)?.created_at,
         );
 
-        console.log("posts nach freundschaft: ", postsAfterFriendship)
+        console.log("posts nach freundschaft: ", postsAfterFriendship);
         setPictures(postsAfterFriendship);
-      } catch (error) { 
+      } catch (error) {
         console.error("Fehler beim initialen Laden:", error);
       }
     };
@@ -129,10 +134,12 @@ export default function HomeScreen() {
         async (payload) => {
           console.log("Neues Bild live empfangen!", payload.new);
 
-          const picFromFriend = friends.some((f) => f.id === payload.new.user_id);
+          const picFromFriend = friends.some(
+            (f) => f.id === payload.new.user_id,
+          );
 
           if (!picFromFriend) {
-            console.log("picture not from friend")
+            console.log("picture not from friend");
             return;
           }
 
@@ -175,7 +182,15 @@ export default function HomeScreen() {
 
       const filteredData = data.filter((u) => u.id !== profile.id);
 
-      setUsers(filteredData);
+      const checkedData = filteredData.map((u) => {
+        const isFriend = friends.some((f) => f.id === u.id);
+        return {
+          ...u,
+          isFriend,
+        };
+      });
+
+      setUsers(checkedData);
     }
   };
 
@@ -257,12 +272,18 @@ export default function HomeScreen() {
                 @{u.username} ({u.display_name})
               </Text>
 
-              <TouchableOpacity
-                className="p-2"
-                onPress={() => requestFriend(u.id)}
-              >
-                <Plus size={20} color={"#fff"} />
-              </TouchableOpacity>
+              {u.isFriend ? (
+                <TouchableOpacity className="p-2" disabled>
+                  <Check size={20} color={"#fff"} />
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  className="p-2"
+                  onPress={() => requestFriend(u.id)}
+                >
+                  <Plus size={20} color={"#fff"} />
+                </TouchableOpacity>
+              )}
             </View>
           ))}
         </View>
@@ -273,7 +294,9 @@ export default function HomeScreen() {
         <Pictures photos={pictures} setPhotos={setPictures} />
       </View>
 
-      <Text className="text-white font-bold">Nutzername: {profile?.username}</Text>
+      <Text className="text-white font-bold">
+        Nutzername: {profile?.username}
+      </Text>
       <Text className="text-white"> Anzeigename: {profile?.display_name}</Text>
 
       {/* 4. Footer: Der SignOut Button bleibt fest unten */}
