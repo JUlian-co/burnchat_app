@@ -11,7 +11,8 @@ export default function CameraScreen() {
   const [facing, setFacing] = useState("front");
   const [permission, requestPermission] = useCameraPermissions();
   const ref = useRef(null);
-  const [photo, setPhoto] = useState({ uri: null });
+  const [picTaken, setPicTaken] = useState(false);
+  // const [photo, setPhoto] = useState({ uri: null });
 
   if (!permission) {
     return <SafeAreaView className="flex-1 bg-black" />;
@@ -36,13 +37,15 @@ export default function CameraScreen() {
     console.log("take pic called");
     const photo = await ref.current?.takePictureAsync();
     if (photo?.uri) {
-      console.log("Foto aufgenommen:", photo.uri);
-      setPhoto(photo);
+      console.log("             Foto aufgenommen:", photo.uri);
+      // setPhoto(photo);
+      setPicTaken(true);
+      sendPicture(photo);
     }
     // uploadImage(photo);
   };
 
-  const sendPicture = async () => {
+  const sendPicture = async (photo) => {
     const photoUrl = await uploadImage(photo);
 
     console.warn("photourl in sendpic: ", photoUrl);
@@ -54,7 +57,7 @@ export default function CameraScreen() {
       console.error("error sending picture: ", error);
     }
 
-    setPhoto({ uri: null });
+    // setPhoto({ uri: null });
   };
 
   const uploadImage = async (asset) => {
@@ -117,33 +120,38 @@ export default function CameraScreen() {
     </>
   );
 
+  /* TODO: Den senden button weg machen und direkt beim aufnehmen senden (aber mit revoke button) */
   const TakenImage = () => (
     <View className="items-center justify-center">
-      <Image
+      {/* <Image
         source={{ uri: photo.uri }}
         contentFit="contain"
         style={{ width: 300, aspectRatio: 1 }} // <- Auch hier sicheres Inline-Styling
         className="rounded-lg mb-6"
         onLoad={() => console.log("Bild erfolgreich geladen!")}
         onError={(err) => console.log("Fehler beim Bildladen:", err)}
-      />
-      <Button
-        onPress={() => setPhoto({ uri: null })}
-        title="Take another picture"
-      />
-
-      <TouchableOpacity
+      /> */}
+      <Button onPress={() => setPicTaken(false)} title="Weiteres Bild machen" />
+      {/* TODO: Das hier ist scheiße man soll nämlich bilder spamen können */}
+      {/* <TouchableOpacity
         className="bg-emerald-400/80 px-6 py-4 rounded-xl active:bg-white/30 mt-4"
         onPress={sendPicture}
       >
         <Text>Senden</Text>
+      </TouchableOpacity> */}
+      <TouchableOpacity
+        className="bg-emerald-400/80 px-6 py-4 rounded-xl active:bg-white/30 mt-4"
+        onPress={sendPicture}
+      >
+        <Text>Oops</Text>
       </TouchableOpacity>
     </View>
   );
 
   return (
     <SafeAreaView className="flex-1 bg-black justify-center items-center">
-      {photo.uri ? <TakenImage /> : <Camera />}
+      {/* {photo.uri ? <TakenImage /> : <Camera />} */}
+      {picTaken ? <TakenImage /> : <Camera />}
     </SafeAreaView>
   );
 }
