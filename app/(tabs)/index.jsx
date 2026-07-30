@@ -26,21 +26,29 @@ export default function HomeScreen() {
 
   // 1. Alle Posts von freunden von Server holen
   const fetchRawPosts = async () => {
-    if (friends.length === 0) {
+    console.log("               fetching raw posts for friends: ", friends);
+
+    const friendIds = (friends ?? []).map((f) => f.id);
+
+    if (friendIds.length === 0) {
       console.log("du hast keine freunde");
-      return;
+      return [];
     }
+
+    console.log("90876890ß98765 FREUNDEEEEE: ", friends);
 
     const { data, error } = await supabase
       .from("posts")
       .select("*")
-      .eq(
-        "user_id",
-        friends.map((f) => f.id),
-      )
+      .in("user_id", friendIds)
       .order("created_at", { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+      console.error("Error fetching posts: ", error);
+      return [];
+    }
+
+    console.log("raw ", data);
     return data || [];
   };
 
@@ -104,6 +112,10 @@ export default function HomeScreen() {
       if (friends?.length === 0) return;
 
       try {
+        console.log(
+          "               fetching initial pictures for friends: ",
+          friends,
+        );
         const rawPosts = await fetchRawPosts();
         const validNotViewedPosts = await processAndFilterPosts(
           rawPosts,
@@ -112,7 +124,7 @@ export default function HomeScreen() {
 
         const postsAfterFriendship = validNotViewedPosts.filter(
           (p) =>
-            p.createdAt > friends.find((f) => f.id === p.user_id)?.created_at,
+            p.created_at > friends.find((f) => f.id === p.user_id)?.created_at,
         );
 
         console.log("posts nach freundschaft: ", postsAfterFriendship);
