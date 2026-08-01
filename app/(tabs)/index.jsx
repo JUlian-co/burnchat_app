@@ -12,6 +12,7 @@ export default function CameraScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const ref = useRef(null);
   const [picTaken, setPicTaken] = useState(false);
+  const [revoked, setRevoked] = useState(false);
   // const [photo, setPhoto] = useState({ uri: null });
 
   if (!permission) {
@@ -40,7 +41,18 @@ export default function CameraScreen() {
       console.log("             Foto aufgenommen:", photo.uri);
       // setPhoto(photo);
       setPicTaken(true);
-      sendPicture(photo);
+
+      setTimeout(() => {
+        if (revoked) {
+          console.log("revokeddd");
+          setPicTaken(false);
+          return;
+        }
+        console.log(revoked);
+        console.log("not revoked");
+        sendPicture(photo);
+        setPicTaken(false);
+      }, 3000);
     }
     // uploadImage(photo);
   };
@@ -90,6 +102,10 @@ export default function CameraScreen() {
     }
   };
 
+  const oops = async () => {
+    setRevoked(true);
+  };
+
   const Camera = () => (
     <>
       {/* Der Container bleibt Tailwind, das klappt super */}
@@ -120,7 +136,6 @@ export default function CameraScreen() {
     </>
   );
 
-  /* TODO: Den senden button weg machen und direkt beim aufnehmen senden (aber mit revoke button) */
   const TakenImage = () => (
     <View className="items-center justify-center">
       {/* <Image
@@ -141,7 +156,7 @@ export default function CameraScreen() {
       </TouchableOpacity> */}
       <TouchableOpacity
         className="bg-emerald-400/80 px-6 py-4 rounded-xl active:bg-white/30 mt-4"
-        onPress={sendPicture}
+        onPress={oops}
       >
         <Text>Oops</Text>
       </TouchableOpacity>
