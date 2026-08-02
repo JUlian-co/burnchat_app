@@ -5,6 +5,7 @@ import { Button, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "@/lib/supabase";
 import { useAuthContext } from "@/hooks/use-auth-context";
+import { RefreshCcw } from "lucide-react-native";
 
 export default function CameraScreen() {
   const { profile } = useAuthContext();
@@ -103,6 +104,7 @@ export default function CameraScreen() {
   };
 
   const oops = async () => {
+    /* TODO: Auch hier ist noch zu viel friction, dieser oops button sollte auch noch auf der kamera seite sein, also das gesamte imagetaken component muss weg */
     setRevoked(true);
   };
 
@@ -123,7 +125,7 @@ export default function CameraScreen() {
           className="bg-white/20 px-6 py-4 rounded-xl active:bg-white/30"
           onPress={toggleCameraFacing}
         >
-          <Text className="text-white text-lg font-bold">Flip</Text>
+          <RefreshCcw size={24} color="white" />
         </TouchableOpacity>
 
         <TouchableOpacity
