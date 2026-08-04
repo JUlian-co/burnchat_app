@@ -35,20 +35,16 @@ export const friendships = pgTable(
     friendId: uuid("friend_id")
       .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
-    // Status: 'pending' (Anfrage gesendet), 'accepted' (Freunde), 'declined' (Abgelehnt)
-    // TODO: Vllt mal noch ein enum
-    status: varchar("status", { length: 20 }).default("pending").notNull(),
+    status: varchar("status", { length: 20 }).default("pending").notNull(), // vllt enum
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
-  (table) => {
-    return {
-      // TODO: In zukunft wenn gut läuft dann professioneller über rls oder so machen, keine abfrage davor
-      uniqueUserFriend: unique("unique_user_friend").on(
-        table.userId,
-        table.friendId,
-      ), // Verhindert exakt doppelte zeilen
-    };
-  },
+  (table) => ({
+    // GARANTIERT: A->B und B->A können nicht gleichzeitig existieren
+    uniqueSymmetricFriendship: index("unique_symmetric_friendship").on(
+      sql`LEAST(${table.userId}, ${table.friendId})`,
+      sql`GREATEST(${table.userId}, ${table.friendId})`,
+    ),
+  }),
 );
 
 export const streaks = pgTable(
