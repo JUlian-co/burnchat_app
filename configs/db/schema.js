@@ -51,18 +51,35 @@ export const friendships = pgTable(
   },
 );
 
-// 3. Die Streak/Flammen-Tabelle (Das Herzstück deines Suchtfaktors!)
-export const streaks = pgTable("streaks", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  userOneId: uuid("user_one_id")
-    .references(() => users.id, { onDelete: "cascade" })
-    .notNull(),
-  userTwoId: uuid("user_two_id")
-    .references(() => users.id, { onDelete: "cascade" })
-    .notNull(),
-  count: integer("count").default(0).notNull(), // Die Anzahl der Flammen
-  lastInteraction: timestamp("last_interaction").defaultNow().notNull(), // Wann wurde das letzte Live-Bild geschickt?
-});
+export const streaks = pgTable(
+  "streaks",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+
+    // Die beiden Freunde
+    userOneId: uuid("user_one_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    userTwoId: uuid("user_two_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+
+    count: integer("count").default(0).notNull(), // Anzahl der Tage/Flammen
+
+    // WICHTIG: Wann hat JEDER Einzelne zuletzt ein Bild geschickt?
+    userOneLastPost: timestamp("user_one_last_post"),
+    userTwoLastPost: timestamp("user_two_last_post"),
+
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    // Verhindert doppelte Streak-Einträge für dasselbe Paar
+    userPairIdx: uniqueIndex("user_pair_idx").on(
+      table.userOneId,
+      table.userTwoId,
+    ),
+  }),
+);
 
 export const posts = pgTable("posts", {
   id: uuid("id").defaultRandom().primaryKey(),
