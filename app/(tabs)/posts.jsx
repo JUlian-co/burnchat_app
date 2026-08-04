@@ -230,26 +230,20 @@ export default function HomeScreen() {
   };
 
   const friendshipExists = async (friendId) => {
-    const { data, error: existingError } = await supabase
+    const { data, error } = await supabase
       .from("friendships")
-      .select("*")
+      .select("id") // Wir brauchen nur die ID zum Prüfen
       .or(
         `and(user_id.eq.${profile.id},friend_id.eq.${friendId}),and(user_id.eq.${friendId},friend_id.eq.${profile.id})`,
       )
-      .single();
+      .maybeSingle(); // Gibt null zurück wenn nichts gefunden wurde (kein PGRST116 Fehler!)
 
-    if (existingError && existingError.code !== "PGRST116") {
-      console.error("Error checking existing friendship: ", existingError);
-      return;
+    if (error) {
+      console.error("Error checking existing friendship: ", error);
+      return false;
     }
 
-    if (data) {
-      console.log("Existing friendship found: ", data);
-
-      return true;
-    }
-
-    return false;
+    return Boolean(data); // Gibt true zurück wenn data existiert, sonst false
   };
 
   return (
