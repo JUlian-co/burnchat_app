@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   pgTable,
   uuid,
@@ -6,6 +7,7 @@ import {
   timestamp,
   uniqueIndex,
   unique,
+  index,
 } from "drizzle-orm/pg-core";
 
 // 1. Die User-Tabelle
