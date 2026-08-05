@@ -18,7 +18,7 @@ import { Check, Plus, Search, X } from "lucide-react-native";
 import { supabase } from "@/lib/supabase";
 import { useEffect, useState } from "react";
 
-export default function HomeScreen() {
+export default function PostsScreen() {
   const { profile, friends } = useAuthContext();
   const [users, setUsers] = useState([]);
   const [showUsers, setShowUsers] = useState(false);
