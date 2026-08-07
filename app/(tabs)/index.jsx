@@ -7,7 +7,7 @@ import { useAuthContext } from "@/hooks/use-auth-context";
 import { createPost } from "@/lib/posts";
 
 export default function CameraScreen() {
-  const { profile } = useAuthContext();
+  const { profile, friends } = useAuthContext();
   const [facing, setFacing] = useState("front");
   const [permission, requestPermission] = useCameraPermissions();
   const [picTaken, setPicTaken] = useState(false);
@@ -45,7 +45,7 @@ export default function CameraScreen() {
         }
 
         // Bild hochladen & Post in DB erstellen
-        await createPost(profile.id, photo);
+        await createPost(profile.id, photo, friends);
         setPicTaken(false);
       }, 3000);
     }
