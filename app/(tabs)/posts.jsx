@@ -1,41 +1,46 @@
 import { Image } from "expo-image";
-import {
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
-
-import { HelloWave } from "@/components/hello-wave";
-import ParallaxScrollView from "@/components/parallax-scroll-view";
-import SignOutButton from "@/components/social-auth-buttons/sign-out-button";
-import { ThemedText } from "@/components/themed-text";
-import { ThemedView } from "@/components/themed-view";
-import { useAuthContext } from "@/hooks/use-auth-context";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Check, Plus, Search, X } from "lucide-react-native";
-import { supabase } from "@/lib/supabase";
 import { useEffect, useState } from "react";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import Animated, {
+  FadeIn,
+  FadeOut,
+  useReducedMotion,
+  withTiming,
+} from "react-native-reanimated";
+import SignOutButton from "@/components/social-auth-buttons/sign-out-button";
+import {
+  Avatar,
+  Card,
+  Chip,
+  EmptyState,
+  haptics,
+  Icon,
+  ListGroup,
+  ListRow,
+  NavBar,
+  Screen,
+  Text,
+  TextField,
+  useColors,
+} from "@/components/ui";
+import { useAuthContext } from "@/hooks/use-auth-context";
+import { touchTarget } from "@/lib/design/tokens";
+import { supabase } from "@/lib/supabase";
 
 export default function PostsScreen() {
   const { profile, friends } = useAuthContext();
+  const colors = useColors();
   const [users, setUsers] = useState([]);
   const [showUsers, setShowUsers] = useState(false);
   const [pictures, setPictures] = useState([]);
 
   // 1. Alle Posts von freunden von Server holen
   const fetchRawPosts = async () => {
-    console.log("               fetching raw posts for friends: ", friends);
-
     const friendIds = (friends ?? []).map((f) => f.id);
 
     if (friendIds.length === 0) {
-      console.log("du hast keine freunde");
       return [];
     }
-
-    console.log("90876890ß98765 FREUNDEEEEE: ", friends);
 
     const { data, error } = await supabase
       .from("posts")
@@ -48,7 +53,6 @@ export default function PostsScreen() {
       return [];
     }
 
-    console.log("raw ", data);
     return data || [];
   };
 
@@ -112,10 +116,6 @@ export default function PostsScreen() {
       if (friends?.length === 0) return;
 
       try {
-        console.log(
-          "               fetching initial pictures for friends: ",
-          friends,
-        );
         const rawPosts = await fetchRawPosts();
         const validNotViewedPosts = await processAndFilterPosts(
           rawPosts,
@@ -127,7 +127,6 @@ export default function PostsScreen() {
             p.created_at > friends.find((f) => f.id === p.user_id)?.created_at,
         );
 
-        console.log("posts nach freundschaft: ", postsAfterFriendship);
         setPictures(postsAfterFriendship);
       } catch (error) {
         console.error("Fehler beim initialen Laden:", error);
@@ -144,14 +143,11 @@ export default function PostsScreen() {
         { event: "INSERT", schema: "public", table: "posts" },
         // TODO: Hier noch RLS oder so machen weil man auf JEDES bild hört, egal ob von freund oder nicht
         async (payload) => {
-          console.log("Neues Bild live empfangen!", payload.new);
-
           const picFromFriend = friends.some(
             (f) => f.id === payload.new.user_id,
           );
 
           if (!picFromFriend) {
-            console.log("picture not from friend");
             return;
           }
 
@@ -190,8 +186,6 @@ export default function PostsScreen() {
     if (error) {
       console.error("Error fetching users:", error);
     } else {
-      console.log("Fetched users:", data);
-
       const filteredData = data.filter((u) => u.id !== profile.id);
 
       const checkedData = filteredData.map((u) => {
@@ -207,8 +201,6 @@ export default function PostsScreen() {
   };
 
   const requestFriend = async (friendId) => {
-    console.log("Requesting friendship with user ID:", friendId);
-
     const exists = await friendshipExists(friendId);
 
     if (exists) return;
@@ -219,13 +211,9 @@ export default function PostsScreen() {
 
     if (error) {
       console.error("Error sending friend request: ", error);
-
-      if (error.code === "23505") {
-        // Unique violation
-        console.log("friend req already exists");
-      }
+      haptics.error();
     } else {
-      console.log("Friend request sent successfully");
+      haptics.success();
     }
   };
 
@@ -247,94 +235,167 @@ export default function PostsScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-black">
-      {/* 1. Header: Suchleiste bleibt oben */}
-      <View className="flex flex-row items-center w-full z-50 bg-black">
-        <TouchableOpacity
-          onPress={() => setShowUsers((prev) => !prev)}
-          className="flex-row items-center justify-center bg-gray-400 size-14"
-        >
-          {showUsers ? <X /> : <Search size={28} />}
-        </TouchableOpacity>
+    <Screen>
+      <NavBar
+        title={showUsers ? "Suchen" : "Burnchat"}
+        subtitle={showUsers ? undefined : "Antippen laesst das Bild verbrennen."}
+        trailing={
+          <Pressable
+            onPress={() => setShowUsers((prev) => !prev)}
+            accessibilityRole="button"
+            accessibilityLabel={
+              showUsers ? "Suche schliessen" : "Freunde suchen"
+            }
+            style={{ width: touchTarget, height: touchTarget }}
+            className="items-center justify-center rounded-full bg-elevated active:scale-[0.92] active:opacity-60"
+          >
+            <Icon
+              name={showUsers ? "close" : "search"}
+              size={19}
+              color={colors.label}
+            />
+          </Pressable>
+        }
+      />
 
-        {showUsers && (
-          <TextInput
-            placeholder="Freunde finden..."
-            className="border border-gray-300 p-2 flex-1 h-full text-white" // Wichtig: flex-1 statt w-full, damit es neben dem Button bleibt
+      {showUsers ? (
+        <View className="flex-1 gap-4 px-4">
+          <TextField
+            variant="filled"
+            placeholder="Nutzername"
+            autoCapitalize="none"
+            autoCorrect={false}
+            autoFocus
             onChangeText={(e) => searchUsers(e)}
           />
-        )}
-      </View>
 
-      {/* 2. Suchergebnisse (überlagern den Feed, wenn aktiv) */}
-      {showUsers && (
-        <View className="absolute top-32 left-0 right-0 bottom-0 bg-black z-40 px-4">
-          {users.map((u) => (
-            <View
-              key={u.id}
-              className="py-4 border-b border-zinc-800 flex-row items-center justify-between w-full"
+          {users.length > 0 ? (
+            <ScrollView
+              contentContainerClassName="pb-8"
+              keyboardShouldPersistTaps="handled"
             >
-              <Text className="text-lg font-bold text-white">
-                @{u.username} ({u.display_name})
-              </Text>
-
-              {u.isFriend ? (
-                <TouchableOpacity className="p-2" disabled>
-                  <Check size={20} color={"#fff"} />
-                </TouchableOpacity>
-              ) : (
-                <TouchableOpacity
-                  className="p-2"
-                  onPress={() => requestFriend(u.id)}
-                >
-                  <Plus size={20} color={"#fff"} />
-                </TouchableOpacity>
-              )}
-            </View>
-          ))}
+              <ListGroup>
+                {users.map((u, index) => (
+                  <ListRow
+                    key={u.id}
+                    title={u.display_name || u.username}
+                    subtitle={`@${u.username}`}
+                    leading={<Avatar name={u.display_name || u.username} />}
+                    showSeparator={index < users.length - 1}
+                    trailing={
+                      u.isFriend ? (
+                        <Chip tone="sage" label="Freund" icon="check" />
+                      ) : (
+                        <Pressable
+                          onPress={() => requestFriend(u.id)}
+                          accessibilityRole="button"
+                          accessibilityLabel={`${u.username} hinzufuegen`}
+                          hitSlop={8}
+                          className="size-9 items-center justify-center rounded-full bg-accent active:scale-[0.9] active:opacity-70"
+                        >
+                          <Icon name="add" size={17} color={colors["on-fill"]} />
+                        </Pressable>
+                      )
+                    }
+                  />
+                ))}
+              </ListGroup>
+            </ScrollView>
+          ) : (
+            <EmptyState
+              icon={<Icon name="personAdd" size={40} color={colors.muted} />}
+              title="Wen suchst du?"
+              description="Tippe den Nutzernamen ein. Treffer erscheinen sofort."
+            />
+          )}
         </View>
+      ) : (
+        <>
+          <View className="w-full flex-1 items-center justify-center">
+            <Pictures
+              photos={pictures}
+              setPhotos={setPictures}
+              hasFriends={friends?.length > 0}
+              onFindFriends={() => setShowUsers(true)}
+            />
+          </View>
+
+          <View className="px-4 pb-3">
+            <Card className="flex-row items-center gap-3">
+              <Avatar
+                name={profile?.display_name || profile?.username || ""}
+                size={44}
+              />
+              <View className="flex-1">
+                <Text variant="headline">
+                  {profile?.display_name || "Kein Profil"}
+                </Text>
+                <Text variant="footnote" tone="muted">
+                  @{profile?.username ?? "unbekannt"}
+                </Text>
+              </View>
+              <SignOutButton />
+            </Card>
+          </View>
+        </>
       )}
-
-      {/* 3. Der Bilder-Bereich: Nimmt EXAKT den freien Platz in der Mitte ein */}
-      <View className="flex-1 justify-center items-center w-full my-4">
-        <Pictures photos={pictures} setPhotos={setPictures} />
-      </View>
-
-      <Text className="text-white font-bold">
-        Nutzername: {profile?.username}
-      </Text>
-      <Text className="text-white"> Anzeigename: {profile?.display_name}</Text>
-
-      {/* 4. Footer: Der SignOut Button bleibt fest unten */}
-      <View className="w-full items-center pb-4">
-        <SignOutButton />
-      </View>
-    </SafeAreaView>
+    </Screen>
   );
 }
 
-function Pictures({ photos, setPhotos }) {
+// Pressable, das Reanimateds Ein- und Ausblend-Animationen versteht.
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+// Der Brennmoment: die Karte flammt kurz auf und ist weg. Laeuft als Worklet
+// auf dem UI-Thread, deshalb das "worklet"-Kennwort — sonst ruckelt es,
+// sobald JavaScript gerade beschaeftigt ist.
+const burnAway = () => {
+  "worklet";
+  return {
+    initialValues: { opacity: 1, transform: [{ scale: 1 }] },
+    animations: {
+      opacity: withTiming(0, { duration: 380 }),
+      transform: [{ scale: withTiming(1.08, { duration: 380 }) }],
+    },
+  };
+};
+
+function Pictures({ photos, setPhotos, hasFriends, onFindFriends }) {
   const { profile } = useAuthContext();
+  const colors = useColors();
+  // Systemeinstellung "Bewegung reduzieren" — dann wird nur weich geblendet
+  // statt aufzuflammen. Bei Apple ist das Pflicht, nicht Kuer.
+  const reduceMotion = useReducedMotion();
 
   const clickedCPicture = async (pictureId) => {
+    haptics.tap();
+
     const { error } = await supabase
       .from("post_views")
       .insert({ post_id: pictureId, user_id: profile.id });
 
     if (error) {
       console.error("Error recording post view: ", error);
-    } else {
-      console.log("Post view recorded successfully");
     }
 
     setPhotos((photos) => photos.filter((p) => p.id !== pictureId));
   };
 
   if (!photos || photos.length === 0) {
-    return (
-      <View className="flex-1 justify-center items-center">
-        <Text className="text-white text-lg">Alle bilder gesehen! 🔥</Text>
-      </View>
+    return hasFriends ? (
+      <EmptyState
+        icon={<Icon name="flame" size={40} color={colors.accent} />}
+        title="Alles gesehen"
+        description="Neue Bilder deiner Freunde landen sofort hier."
+      />
+    ) : (
+      <EmptyState
+        icon={<Icon name="personAdd" size={40} color={colors.muted} />}
+        title="Noch keine Freunde"
+        description="Ohne Freunde bleibt es hier leer. Such jemanden ueber die Lupe oben."
+        actionTitle="Freunde finden"
+        onAction={onFindFriends}
+      />
     );
   }
 
@@ -346,9 +407,12 @@ function Pictures({ photos, setPhotos }) {
         const isTopCard = index === 0;
 
         return (
-          <TouchableOpacity
+          <AnimatedPressable
             key={p.id}
-            activeOpacity={0.9}
+            entering={FadeIn.duration(220)}
+            exiting={reduceMotion ? FadeOut.duration(280) : burnAway}
+            accessibilityRole="button"
+            accessibilityLabel={`Bild von ${p.username} verbrennen`}
             // Klick-Logik: Nur die oberste Karte reagiert auf Klicks
             onPress={() => {
               if (isTopCard) {
@@ -362,33 +426,35 @@ function Pictures({ photos, setPhotos }) {
               {
                 // Z-Index umdrehen: Index 0 kriegt den höchsten Z-Index (liegt ganz oben)
                 zIndex: photos.length - index,
-                // Optional: Ein ganz leichter Versatz für die hinteren Karten (3D-Effekt)
+                // Leichter Versatz fuer die hinteren Karten (Stapel-Effekt)
                 transform: [
-                  { translateY: index * 4 },
-                  { scale: 1 - index * 0.02 },
+                  { translateY: index * 6 },
+                  { scale: 1 - index * 0.03 },
                 ],
               },
             ]}
           >
-            <View className="bg-zinc-900 p-4 rounded-2xl border border-zinc-800 shadow-2xl">
+            <Card>
               <Image
-                source={{ uri: p.image_url }} // Wichtig: Bei URLs aus dem Web { uri: ... } nutzen
+                source={{ uri: p.image_url }}
                 contentFit="cover"
-                style={{ width: "100%", aspectRatio: 3 / 4 }} // 3:4 Format wirkt mehr wie Kamera/Snapchat
-                className="rounded-xl mb-4"
+                style={{ width: "100%", aspectRatio: 3 / 4, borderRadius: 8 }}
               />
 
-              <View className="flex-row justify-between items-center px-1">
-                <Text className="text-xl font-bold text-white">
-                  @{p.username}
-                </Text>
-                {/* Hier kannst du später noch die Flammenzahl anzeigen */}
-                <Text className="text-lg text-orange-500 font-black">
-                  🔥 {p.streakCount || 0}
-                </Text>
+              <View className="mt-3 flex-row items-center justify-between">
+                <View className="flex-row items-center gap-2">
+                  <Avatar name={p.displayName || p.username} size={28} />
+                  <Text variant="headline">@{p.username}</Text>
+                </View>
+
+                <Chip
+                  tone="accent"
+                  label={String(p.streakCount || 0)}
+                  icon="flame"
+                />
               </View>
-            </View>
-          </TouchableOpacity>
+            </Card>
+          </AnimatedPressable>
         );
       })}
     </View>
@@ -405,7 +471,7 @@ const styles = StyleSheet.create({
   },
   card: {
     position: "absolute",
-    width: "85%", // Damit es links und rechts cool aussieht
+    width: "88%",
     maxWidth: 400,
   },
 });

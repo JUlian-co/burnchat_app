@@ -1,29 +1,25 @@
-import {
-  DarkTheme,
-  DefaultTheme,
-  ThemeProvider,
-} from "@react-navigation/native";
 import { Stack, useRouter, useSegments } from "expo-router";
-import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 import "./global.css";
 
 import { SplashScreenController } from "@/components/splash-screen-controller";
+import { AppTheme } from "@/components/ui";
 
 import { useAuthContext } from "@/hooks/use-auth-context";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import AuthProvider from "@/providers/auth-provider";
 import { useEffect } from "react";
 
 function RootNavigator() {
-  // const { isLoggedIn } = useAuthContext(); ist da
   const { session, isLoading } = useAuthContext();
-  console.log("Session in RootLayoutNav:", session);
   const segments = useSegments();
   const router = useRouter();
 
   useEffect(() => {
     if (isLoading) return;
+
+    // Der Design-Katalog zeigt nur Farben und Bausteine, redet mit keinem
+    // Backend und braucht deshalb keine Anmeldung.
+    if (segments[0] === "(design)") return;
 
     const inAuthGroup = segments[0] === "(auth)";
 
@@ -38,20 +34,22 @@ function RootNavigator() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="(design)" />
     </Stack>
   );
 }
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-
+  // AppTheme statt React Navigations ThemeProvider: der schaltete nur die
+  // Navigations-Chrome um, waehrend die Screens hell blieben — bei dunklem
+  // Systemmodus sah das zerrissen aus. Jetzt gibt es genau eine Quelle fuer
+  // Hell/Dunkel, und die Statusleiste setzt <Screen> selbst.
   return (
-    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      <AuthProvider>
+    <AuthProvider>
+      <AppTheme>
         <SplashScreenController />
         <RootNavigator />
-        <StatusBar style="auto" />
-      </AuthProvider>
-    </ThemeProvider>
+      </AppTheme>
+    </AuthProvider>
   );
 }

@@ -31,7 +31,9 @@ yarn-error.*
 *.pem
 
 # local env files
+.env
 .env.local
+.env.*.local
 
 # typescript
 *.tsbuildinfo
@@ -44,3 +46,6 @@ app-example
 
 
 drizzle.config.js
+
+# Design-Screenshots aus dem Web-Preview
+.shots/

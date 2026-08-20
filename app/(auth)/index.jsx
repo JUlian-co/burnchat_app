@@ -1,85 +1,95 @@
-
-import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
-    Alert,
-  Button,
+  Alert,
+  KeyboardAvoidingView,
   Platform,
-  Text,
-  TextInput,
-  TouchableOpacity,
+  ScrollView,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { supabase } from "../../lib/supabase";
+import { Button, ListGroup, Screen, Text, TextField } from "@/components/ui";
+import { supabase } from "@/lib/supabase";
 
-export default function HomeScreen() {
-  const [user, setUser] = useState({ username: null, displayname: null})
-  const router = useRouter();
-
-  console.log(user);
-
- /*  const nextStep = () => {
-    router.push({ pathname: "/name", params: { nig: "hi" } });
-  }; */
+export default function SignUpScreen() {
+  const [user, setUser] = useState({ username: null, displayname: null });
 
   const handleUserChange = (e, type) => {
     setUser({ ...user, [type]: e });
-  }
+  };
 
   const handleAnonSignIn = async () => {
-    const { data: authData, error: authError } = await supabase.auth.signInAnonymously();
-    
-    console.warn("authData", authData);
+    const { data: authData, error: authError } =
+      await supabase.auth.signInAnonymously();
 
     if (!authData?.user.id) {
       Alert.alert("Auth Fehler", "Keine User ID erhalten");
       return;
     }
-    console.log("auth user id: ", authData.user.id);
-    console.log("authError", authError);
-    
+
     if (authError) {
       Alert.alert("Auth Fehler", authError.message);
       return;
     }
 
-
-    const { /* data: profileData, */ error: profileError } = await supabase
-      .from("users")
-      .insert({
-        id: authData.user.id,
-        username: user.username,
-        display_name: user.displayname,
-      })
-      /* .select()
-      .single(); */
-
-    // console.log("profileData", profileData);
-    console.log("profileError", profileError);
+    const { error: profileError } = await supabase.from("users").insert({
+      id: authData.user.id,
+      username: user.username,
+      display_name: user.displayname,
+    });
 
     if (profileError) {
       Alert.alert("Profil Fehler", profileError.message);
       return;
     }
-
-    // nextStep();
-  }
-
+  };
 
   return (
-    <SafeAreaView className="flex-1 justify-center items-center px-4 bg-black">
-
-        <TextInput placeholder="Nutzername" placeholderTextColor="#888" className="bg-gray-800 text-white p-4 rounded-2xl w-full mb-4" onChangeText={(e) => handleUserChange(e, "username")}/>
-        <TextInput placeholder="Anzeigename" placeholderTextColor="#888" className="bg-gray-800 text-white p-4 rounded-2xl w-full mb-4" onChangeText={(e) => handleUserChange(e, "displayname")}/>
-        {/* TODO: profilbild */}
-      
-      <TouchableOpacity
-        onPress={handleAnonSignIn}
-        className="bg-emerald-500 p-4 rounded-2xl w-full"
+    <Screen>
+      {/* Auf iOS schiebt "padding" den Inhalt ueber die Tastatur. Android
+          erledigt das ueber adjustResize bereits selbst — ein zweiter
+          Mechanismus wuerde dort nur ruckeln. */}
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        <Text className="text-center text-4xl text-white">anmelden</Text>
-      </TouchableOpacity>
-    </SafeAreaView>
+        <ScrollView
+          contentContainerClassName="flex-grow px-4 pb-8"
+          // Ohne das verschluckt die erste Beruehrung nur die Tastatur und
+          // der Knopf loest nicht aus — der haeufigste Fehler auf Mobil.
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View className="pb-8 pt-6">
+            <Text variant="largeTitle">Dein Name</Text>
+          </View>
+
+          <ListGroup footer="Deine Freunde finden dich ueber den Nutzernamen.">
+            <TextField
+              placeholder="Nutzername"
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="username"
+              returnKeyType="next"
+              maxLength={30}
+              showSeparator
+              onChangeText={(e) => handleUserChange(e, "username")}
+            />
+            <TextField
+              placeholder="Anzeigename"
+              autoCapitalize="words"
+              autoComplete="name"
+              returnKeyType="done"
+              maxLength={50}
+              onChangeText={(e) => handleUserChange(e, "displayname")}
+              onSubmitEditing={handleAnonSignIn}
+            />
+          </ListGroup>
+
+          {/* Primaeraktion unten, volle Breite, Kapselform — HIG fuer Formulare. */}
+          <View className="flex-1 justify-end pt-8">
+            <Button title="Konto erstellen" onPress={handleAnonSignIn} />
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </Screen>
   );
 }
