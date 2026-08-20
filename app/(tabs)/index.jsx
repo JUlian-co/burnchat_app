@@ -1,6 +1,5 @@
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { useRef, useState } from "react";
-<<<<<<< HEAD
 import { Pressable, View } from "react-native";
 import {
   Button,
@@ -14,12 +13,6 @@ import {
 } from "@/components/ui";
 import { useAuthContext } from "@/hooks/use-auth-context";
 import { touchTarget } from "@/lib/design/tokens";
-=======
-import { Button, Text, TouchableOpacity, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { RefreshCcw } from "lucide-react-native";
-import { useAuthContext } from "@/hooks/use-auth-context";
->>>>>>> origin/main
 import { createPost } from "@/lib/posts";
 
 export default function CameraScreen() {
@@ -29,14 +22,9 @@ export default function CameraScreen() {
   const [picTaken, setPicTaken] = useState(false);
   const [revoked, setRevoked] = useState(false);
   const ref = useRef(null);
-<<<<<<< HEAD
   const colors = useColors();
 
   if (!permission) return <Screen />;
-=======
-
-  if (!permission) return <SafeAreaView className="flex-1 bg-black" />;
->>>>>>> origin/main
 
   if (!permission.granted) {
     return (
@@ -59,10 +47,7 @@ export default function CameraScreen() {
   };
 
   const takePicture = async () => {
-<<<<<<< HEAD
     haptics.shutter();
-=======
->>>>>>> origin/main
     const photo = await ref.current?.takePictureAsync();
     if (photo?.uri) {
       setPicTaken(true);
@@ -77,16 +62,12 @@ export default function CameraScreen() {
 
         // Bild hochladen & Post in DB erstellen
         await createPost(profile.id, photo, friends);
-<<<<<<< HEAD
         haptics.success();
-=======
->>>>>>> origin/main
         setPicTaken(false);
       }, 3000);
     }
   };
 
-<<<<<<< HEAD
   const oops = () => {
     haptics.warning();
     setRevoked(true);
@@ -152,53 +133,5 @@ export default function CameraScreen() {
         <View style={{ width: touchTarget }} />
       </View>
     </Screen>
-=======
-  const oops = () => setRevoked(true);
-
-  return (
-    <SafeAreaView className="flex-1 bg-black justify-center items-center">
-      {picTaken ? (
-        <View className="items-center justify-center">
-          <Button
-            onPress={() => setPicTaken(false)}
-            title="Weiteres Bild machen"
-          />
-          <TouchableOpacity
-            className="bg-emerald-400/80 px-6 py-4 rounded-xl mt-4"
-            onPress={oops}
-          >
-            <Text className="font-bold">Oops (Abbrechen)</Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <>
-          <View className="w-full aspect-square overflow-hidden bg-neutral-900">
-            <CameraView
-              style={{ flex: 1 }}
-              ref={ref}
-              facing={facing}
-              mirror={facing === "front"}
-            />
-          </View>
-
-          <View className="flex-row justify-around items-center mt-8 w-full px-4">
-            <TouchableOpacity
-              className="bg-white/20 px-6 py-4 rounded-xl"
-              onPress={toggleCameraFacing}
-            >
-              <RefreshCcw size={24} color="white" />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              className="bg-white/20 px-6 py-4 rounded-xl"
-              onPress={takePicture}
-            >
-              <Text className="text-white text-lg font-bold">Bild machen</Text>
-            </TouchableOpacity>
-          </View>
-        </>
-      )}
-    </SafeAreaView>
->>>>>>> origin/main
   );
 }
